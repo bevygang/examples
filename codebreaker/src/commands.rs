@@ -8,19 +8,19 @@ pub enum ParseAction {
 
 pub fn parse_input(input: &str, code: &[char], inputs: &[(Vec<char>,Vec<char>)], count: usize, digits: u32) -> ParseAction {
     match input.to_lowercase().as_str() {
-        "ende" | "exit" => {
+        "x" | "ende" | "exit" => {
             println!("Der Code war {}", code_string(code));
             ParseAction::Break
         },
-        "anzahl" | "count" => {
+        "c" | "anzahl" | "count" => {
             print_remaining_count(inputs, count, digits);
             ParseAction::Continue
         },
-        "verbleibend" | "remaining" => {
+        "r" | "verbleibend" | "remaining" => {
             print_remaining(inputs, count, digits);
             ParseAction::Continue
         },
-        "nächster" | "next" => {
+        "n" | "nächster" | "next" => {
             match next_input(inputs) {
                 Some(next_input) => ParseAction::Input(next_input.iter().collect()),
                 None => {
