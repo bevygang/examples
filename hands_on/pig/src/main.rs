@@ -48,7 +48,7 @@ fn setup(
     mut commands: Commands,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    commands.spawn(Camera2d::default());
+    commands.spawn(Camera2d);
 
     let texture = asset_server.load("dice.png");
     let layout = TextureAtlasLayout::from_grid(UVec2::splat(52), 6, 1, None, None);
@@ -67,8 +67,8 @@ fn display_score(
     let ctx = egui_context.ctx_mut();
     egui::Window::new("Total Scores")
         .show(ctx, |ui| {
-            ui.label(&format!("Player: {}", scores.player));
-            ui.label(&format!("CPU: {}", scores.cpu));
+            ui.label(format!("Player: {}", scores.player));
+            ui.label(format!("CPU: {}", scores.cpu));
         });
 }
 
@@ -118,7 +118,7 @@ fn player(
     let ctx = egui_context.ctx_mut();
     egui::Window::new("Play Options"). show(ctx, |ui| {
         let hand_score: usize = hand_query.iter().map(|(_, ts)| ts.texture_atlas.as_ref().unwrap().index + 1).sum();
-        ui.label(&format!("Score for this hand: {hand_score}"));
+        ui.label(format!("Score for this hand: {hand_score}"));
 
         if ui.button("Roll Dice").clicked() {
             let new_roll = rng.0.range(1..7);
