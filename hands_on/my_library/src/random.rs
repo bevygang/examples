@@ -1,22 +1,31 @@
-use rand::{prelude::StdRng, prelude::Distribution, Rng, SeedableRng};
+use rand::{prelude::Distribution, Rng, SeedableRng};
 use rand::distr::StandardUniform;
 use rand::distr::uniform::{SampleUniform, SampleRange};
 use std::cmp::PartialOrd;
 
+#[cfg(all(not(feature = "xorshift"), not(feature = "pcg")))]
+type RngCore = rand::prelude::StdRng;
+
+#[cfg(feature = "pcg")]
+type RngCore = rand_pcg::Pcg64Mcg;
+
+#[cfg(feature = "xorshift")]
+type RngCore = rand_xorshift::XorShiftRng;
+
 pub struct RandomNumberGenerator {
-    rng: StdRng,
+    rng: RngCore,
 }
 
 impl RandomNumberGenerator {
     pub fn new() -> Self {
         Self {
-            rng: StdRng::from_os_rng(),
+            rng: RngCore::from_os_rng(),
         }
     }
 
     pub fn seeded(seed: u64) -> Self {
         Self {
-            rng: StdRng::seed_from_u64(seed)
+            rng: RngCore::seed_from_u64(seed)
         }
     }
 
