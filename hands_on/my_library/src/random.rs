@@ -1,7 +1,16 @@
 use rand::{prelude::Distribution, Rng, SeedableRng};
 use rand::distr::StandardUniform;
 use rand::distr::uniform::{SampleUniform, SampleRange};
+use bevy::prelude::*;
 use std::cmp::PartialOrd;
+
+pub struct RandomPlugin;
+
+impl Plugin for RandomPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(RandomNumberGenerator::new());
+    }
+}
 
 #[cfg(all(not(feature = "xorshift"), not(feature = "pcg")))]
 type RngCore = rand::prelude::StdRng;
@@ -12,6 +21,7 @@ type RngCore = rand_pcg::Pcg64Mcg;
 #[cfg(feature = "xorshift")]
 type RngCore = rand_xorshift::XorShiftRng;
 
+#[derive(Resource)]
 pub struct RandomNumberGenerator {
     rng: RngCore,
 }
