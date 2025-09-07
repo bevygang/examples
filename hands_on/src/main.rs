@@ -1,3 +1,3 @@
 fn main() {
-    println!("Hello, world!");
+    println!("Please run the flappy_dragon project");
 }
