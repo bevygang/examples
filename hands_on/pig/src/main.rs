@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy_egui::{egui,EguiContexts,EguiPlugin};
-use my_library::*;
+use rng::*;
 
 #[derive(Resource)]
 struct GameAssets {

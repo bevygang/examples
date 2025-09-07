@@ -1,5 +1,5 @@
 [package]
-name = "my_library"
+name = "rng"
 version = "0.1.0"
 edition = "2024"
 
@@ -18,5 +18,5 @@ xorshift = [ "rand_xorshift" ]
 criterion = { version = "0.5", features = ["html_reports"] }
 
 [[bench]]
-name = "random"
+name = "random_bench"
 harness = false

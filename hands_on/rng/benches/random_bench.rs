@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use my_library::*;
+use rng::*;
 
 pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("random", |b| {
