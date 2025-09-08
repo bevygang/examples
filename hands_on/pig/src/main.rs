@@ -11,8 +11,12 @@ struct GameAssets {
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash, Default, States)]
 enum GamePhase {
     #[default]
+    MainMenu,
+    Start,
     Player,
     Cpu,
+    End,
+    GameOver,
 }
 
 #[derive(Clone,Copy,Resource)]
@@ -27,17 +31,26 @@ struct HandDie;
 #[derive(Resource)]
 struct HandTimer(Timer);
 
+#[derive(Component)]
+pub struct GameElement;
+
+#[derive(Resource)]
+struct FinalScore(Scores);
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(EguiPlugin {enable_multipass_for_primary_context: false})
         .add_plugins(RandomPlugin)
-        .add_systems(Startup, setup)
-        .init_state::<GamePhase>()
-        .add_systems(Update, display_score)
+        .add_plugins(GameStatePlugin::new(GamePhase::MainMenu, GamePhase::Start, GamePhase::GameOver))
+        .add_systems(OnEnter(GamePhase::Start), setup)
+        .add_systems(Update, start_game.run_if(in_state(GamePhase::Start)))
+        .add_systems(Update, (display_score, check_game_over).run_if(in_state(GamePhase::Player).or(in_state(GamePhase::Cpu))))
         .add_systems(Update, player.run_if(in_state(GamePhase::Player)))
         .add_systems(Update, cpu.run_if(in_state(GamePhase::Cpu)))
+        .add_systems(Update, end_game.run_if(in_state(GamePhase::End)))
+        .add_systems(OnExit(GamePhase::End), cleanup::<GameElement>)
+        .add_systems(Update, display_final_score.run_if(in_state(GamePhase::GameOver)))
         .run();
 }
 
@@ -46,7 +59,7 @@ fn setup(
     mut commands: Commands,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    commands.spawn(Camera2d);
+    commands.spawn((Camera2d, GameElement));
 
     let texture = asset_server.load("dice.png");
     let layout = TextureAtlasLayout::from_grid(UVec2::splat(52), 6, 1, None, None);
@@ -55,6 +68,28 @@ fn setup(
     commands.insert_resource(GameAssets {image: texture, layout: texture_atlas_layout});
     commands.insert_resource(Scores {cpu: 0, player: 0});
     commands.insert_resource(HandTimer(Timer::from_seconds(0.5, TimerMode::Repeating)));
+}
+
+fn start_game(mut state: ResMut<NextState<GamePhase>>) {
+    state.set(GamePhase::Player);
+}
+
+fn check_game_over(
+    mut state: ResMut<NextState<GamePhase>>,
+    scores: Res<Scores>,
+) {
+    if scores.cpu >= 100 || scores.player >= 100 {
+        state.set(GamePhase::End);
+    }
+}
+
+fn end_game(
+    mut state: ResMut<NextState<GamePhase>>,
+    scores: Res<Scores>,
+    mut commands: Commands,
+) {
+    commands.insert_resource(FinalScore(*scores));
+    state.set(GamePhase::GameOver);
 }
 
 fn display_score(
@@ -67,6 +102,21 @@ fn display_score(
             ui.label(format!("Player: {}", scores.player));
             ui.label(format!("CPU: {}", scores.cpu));
         });
+}
+
+fn display_final_score(
+    scores: Res<FinalScore>,
+    mut egui_context: EguiContexts,
+) {
+    egui::Window::new("Total Scores").show(egui_context.ctx_mut(), |ui| {
+        ui.label(format!("Player: {}", scores.0.player));
+        ui.label(format!("CPU: {}", scores.0.cpu));
+        if scores.0.player < scores.0.cpu {
+            ui.label("CPU is the winner!");
+        } else {
+            ui.label("Player is the winner!");
+        }
+    });
 }
 
 fn spawn_die(
@@ -90,7 +140,8 @@ fn spawn_die(
     commands.spawn((
         sprite,
         Transform::from_xyz(rolled_die - 400.0, 60.0, 1.0),
-        HandDie
+        HandDie,
+        GameElement,
     ));
 }
 
