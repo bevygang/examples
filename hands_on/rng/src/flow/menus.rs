@@ -1,14 +1,14 @@
-use super::{GameStatePlugin,GameState,cleanup};
+use super::{GameStatePlugin,GameState,cleanup,loading};
 use bevy::{app::AppExit, prelude::*};
 
 #[derive(Component)]
 struct MenuElement;
 
 #[derive(Resource)]
-struct MenuResource<T> where T: GameState {
-    menu_state: T,
-    start_state: T,
-    end_state: T,
+pub(crate) struct MenuResource<T> where T: GameState {
+    pub(crate) menu_state: T,
+    pub(crate) start_state: T,
+    pub(crate) end_state: T,
 }
 
 pub fn setup_menus<T>(app: &mut App, state_plugin: &GameStatePlugin<T>) where T: GameState {
@@ -18,6 +18,7 @@ pub fn setup_menus<T>(app: &mut App, state_plugin: &GameStatePlugin<T>) where T:
         end_state: state_plugin.end_state,
     };
 
+    app.add_plugins(bevy_egui::EguiPlugin { enable_multipass_for_primary_context: false });
     app.insert_resource(menu_resource);
 
     app.add_systems(OnEnter(state_plugin.menu_state), setup::<T>);
@@ -27,23 +28,25 @@ pub fn setup_menus<T>(app: &mut App, state_plugin: &GameStatePlugin<T>) where T:
     app.add_systems(OnEnter(state_plugin.end_state), setup::<T>);
     app.add_systems(Update, run::<T>.run_if(in_state(state_plugin.end_state)));
     app.add_systems(OnExit(state_plugin.end_state), cleanup::<MenuElement>);
+
+    app.add_systems(OnEnter(T::default()), loading::setup);
+    app.add_systems(Update, loading::run::<T>.run_if(in_state(T::default())));
+    app.add_systems(OnExit(T::default()), loading::exit);
 }
 
 fn setup<T>(
     state: Res<State<T>>,
     mut commands: Commands,
     menu_resource: Res<MenuResource<T>>,
-    asset_server: Res<AssetServer>,
+    loaded_assets: crate::AssetResource,
+    assets: Res<crate::AssetStore>
 ) where T: GameState {
-    let main_menu = asset_server.load("main_menu.png");
-    let game_over = asset_server.load("game_over.png");
-
     let current_state = state.get();
     let menu_graphic = {
         if menu_resource.menu_state == *current_state {
-            main_menu.clone()
+            assets.get_handle("main_menu", &loaded_assets).unwrap()
         } else if menu_resource.end_state == *current_state {
-            game_over.clone()
+            assets.get_handle("game_over", &loaded_assets).unwrap()
         } else {
             panic!("Unknown menu state");
         }

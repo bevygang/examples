@@ -1,12 +1,13 @@
 mod menus;
+mod loading;
 
 use bevy::prelude::*;
-use bevy::state::state::FreelyMutableState;
 use menus::setup_menus;
+use bevy::state::state::FreelyMutableState;
 
-pub trait GameState: States+Copy+FromWorld+FreelyMutableState {}
+pub trait GameState: States+Copy+Default+FromWorld+FreelyMutableState {}
 
-impl<T> GameState for T where T:States+Copy+FromWorld+FreelyMutableState {}
+impl<T> GameState for T where T:States+Copy+Default+FromWorld+FreelyMutableState {}
 
 pub struct GameStatePlugin<T> where T: GameState {
     menu_state: T,
@@ -24,7 +25,7 @@ impl<T> GameStatePlugin<T> where T: GameState {
 impl<T> Plugin for GameStatePlugin<T> where T: GameState {
     fn build(&self, app: &mut App) {
         app.init_state::<T>();
-        setup_menus(app, self);
+        setup_menus(app, &self);
     }
 }
 
